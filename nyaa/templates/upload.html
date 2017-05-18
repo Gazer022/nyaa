@@ -14,7 +14,9 @@
 
 <div id="upload-drop-zone"><span>Drop here!</span></div>
 <form method="POST" enctype="multipart/form-data">
-	{% if config.ENFORCE_MAIN_ANNOUNCE_URL %}<p><strong>Important:</strong> Please include <kbd>{{config.MAIN_ANNOUNCE_URL}}</kbd> in your trackers</p>{% endif %}
+	{{ form.csrf_token }}
+
+	{% if config.ENFORCE_MAIN_ANNOUNCE_URL %}<p><strong>Important:</strong> Please include <kbd>{{ config.MAIN_ANNOUNCE_URL }}</kbd> in your trackers</p>{% endif %}
 	<div class="row">
 		<div class="form-group col-md-6">
 			{{ render_upload(form.torrent_file, accept=".torrent") }}
@@ -75,11 +77,28 @@
 	<div class="row">
 		<div class="form-group col-md-6">
 			<label>
+				{% if user %}
 				{{ form.is_anonymous }}
+				{% else %}
+				{{ form.is_anonymous(checked="checked", disabled="disabled") }}
+				{% endif %}
 				Anonymous
 			</label>
 		</div>
 	</div>
+
+	{% if config.USE_RECAPTCHA and not user %}
+	<div class="row">
+		<div class="col-md-4">
+			{% for error in form.recaptcha.errors %}
+			{{ error }}
+			{% endfor %}
+			{{ form.recaptcha }}
+		</div>
+	</div>
+	{% endif %}
+
+	<br>
 
 	<div class="row">
 		<div class="form-group col-md-6">

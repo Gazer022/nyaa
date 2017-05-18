@@ -1,3 +1,4 @@
+import flask
 from nyaa import db, app
 from nyaa.models import User
 from nyaa import bencode, utils, models
@@ -14,6 +15,7 @@ from wtforms.widgets import Select as SelectWidget
 from wtforms.widgets import html_params, HTMLString
 
 from flask_wtf.recaptcha import RecaptchaField
+from flask_wtf.recaptcha.validators import Recaptcha as RecaptchaValidator
 
 
 class Unique(object):
@@ -162,10 +164,6 @@ class EditForm(FlaskForm):
 
 
 class UploadForm(FlaskForm):
-
-    class Meta:
-        csrf = False
-
     torrent_file = FileField('Torrent file', [
         FileRequired()
     ])
@@ -176,6 +174,16 @@ class UploadForm(FlaskForm):
                message='Torrent display name must be at least %(min)d characters long and '
                        '%(max)d at most.')
     ])
+
+    if app.config['USE_RECAPTCHA']:
+        # Captcha only for not logged in users
+        _recaptcha_validator = RecaptchaValidator()
+
+        def _validate_recaptcha(form, field):
+            if not flask.g.user:
+                return UploadForm._recaptcha_validator(form, field)
+
+        recaptcha = RecaptchaField(validators=[_validate_recaptcha])
 
     # category = SelectField('Category')
     category = DisabledSelectField('Category')
